@@ -104,6 +104,26 @@ h1{font-size:22px;font-weight:700;color:#e2e8f0;letter-spacing:-.5px;}
 .range-btn:active{transform:scale(.96)}
 .range-btn.active{background:rgba(56,189,248,.12);color:#38bdf8;}
 
+/* ═══ HYDRO POST ═══ */
+.hydro-post{
+  background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.1);
+  border-radius:16px;padding:16px;margin-bottom:20px;
+  animation:fadeUp .5s cubic-bezier(.16,1,.3,1) .12s both;
+}
+.hydro-post-title{
+  font-size:10px;color:#38bdf8;letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;
+}
+.hydro-post-title::before{content:"";width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s ease-in-out infinite;}
+.hydro-grid{display:flex;gap:16px;flex-wrap:wrap;}
+.hydro-item{flex:1 1 80px;min-width:80px;}
+.hydro-item .h-label{font-size:10px;color:#475569;margin-bottom:4px;}
+.hydro-item .h-val{font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:-1px;color:#e2e8f0;}
+.hydro-item .h-val span{font-size:11px;color:#475569;font-weight:400;margin-left:2px;}
+.hydro-item .h-sub{font-size:11px;color:#34d399;margin-top:2px;font-weight:500;}
+.hydro-item .h-sub.rising{color:#f97316;}
+.hydro-meta{font-size:10px;color:#334155;margin-top:10px;border-top:1px solid rgba(255,255,255,.04);padding-top:8px;}
+
 /* ═══ STATS ═══ */
 .stats{
   display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;
@@ -258,6 +278,27 @@ canvas{max-height:260px;touch-action:pan-x;}
       <button class="range-btn" data-days="30" onclick="setRange(30)">30д</button>
       <button class="range-btn" data-days="90" onclick="setRange(90)">90д</button>
     </div>
+  </div>
+
+  <!-- HYDRO POST DATA -->
+  <div class="hydro-post" id="hydroPost">
+    <div class="hydro-post-title">Гідропост Чернігів — дані спостережень</div>
+    <div class="hydro-grid">
+      <div class="hydro-item">
+        <div class="h-label">Рівень води</div>
+        <div class="h-val">380<span>см</span></div>
+      </div>
+      <div class="hydro-item">
+        <div class="h-label">За добу</div>
+        <div class="h-val" style="color:#f97316">+13<span>см</span></div>
+        <div class="h-sub rising">&#x25B2; зростає</div>
+      </div>
+      <div class="hydro-item">
+        <div class="h-label">Темп. води</div>
+        <div class="h-val">1.6<span>°C</span></div>
+      </div>
+    </div>
+    <div class="hydro-meta">23.03.2026, 08:00 · Укргідрометцентр</div>
   </div>
 
   <!-- STATS -->
