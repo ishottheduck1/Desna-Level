@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Десна — моніторинг рівня води</title>
+<meta name="description" content="Моніторинг рівня води річки Десна у Чернігівській області. Реальні дані GloFAS/Copernicus.">
+<meta property="og:title" content="Десна — моніторинг рівня води">
+<meta property="og:description" content="Графік витрати води, прогноз на 14 днів, пости вздовж Десни">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Space+Mono&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:radial-gradient(ellipse at 20% 8%,#0c1f3d 0%,#060d1a 65%);color:#dde4f0;font-family:'Barlow',sans-serif;min-height:100vh;padding-bottom:60px;}
+  ::-webkit-scrollbar{width:5px;background:#060d1a}::-webkit-scrollbar-thumb{background:#1e3560;border-radius:3px}
+
+  /* HEADER */
+  .header{background:linear-gradient(180deg,rgba(0,180,216,.1) 0%,transparent 100%);border-bottom:1px solid rgba(0,180,216,.12);padding:24px 28px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+  .title-tag{font-size:10px;color:#00b4d8;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;}
+  h1{font-size:28px;font-weight:700;background:linear-gradient(100deg,#90e0ef,#00b4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .subtitle{font-size:12px;color:#3a5070;margin-top:3px;}
+  .level-badge{margin-left:auto;border-radius:12px;padding:10px 18px;text-align:center;min-width:130px;}
+  .level-badge .lbl{font-size:10px;color:#5a7090;letter-spacing:2px;text-transform:uppercase;}
+  .level-badge .val{font-size:20px;font-weight:700;font-family:'Space Mono',monospace;}
+
+  /* WRAP */
+  .wrap{padding:22px 28px;max-width:1100px;margin:0 auto;}
+
+  /* CONTROLS */
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
+  .btn-group{display:flex;gap:6px;flex-wrap:wrap;}
+  button{border:none;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .18s;border-radius:8px;padding:7px 15px;font-size:13px;background:rgba(255,255,255,.06);color:#6b8aa8;}
+  button.active{background:#00b4d8;color:#060d1a;font-weight:700;}
+  button.range-btn{font-family:'Space Mono',monospace;font-size:12px;padding:6px 13px;border-bottom:2px solid transparent;}
+  button.range-btn.active{background:rgba(0,180,216,.18);color:#00b4d8;border-bottom:2px solid #00b4d8;}
+  button:hover{opacity:.85;}
+  button:disabled{opacity:.45;cursor:default;}
+
+  /* STATS */
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+  .stat{background:linear-gradient(135deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 20px;flex:1 1 140px;min-width:130px;}
+  .stat-label{font-size:10px;color:#4e6080;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:8px;}
+  .stat-val{font-size:26px;font-family:'Space Mono',monospace;line-height:1;}
+  .stat-val span{font-size:11px;color:#4e6080;margin-left:4px;}
+  .stat-sub{font-size:11px;color:#3a4d6b;margin-top:6px;}
+
+  /* CHART BOX */
+  .chart-box{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:22px 20px 14px;margin-bottom:18px;}
+  .chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .chart-title{font-size:14px;font-weight:600;color:#c8d8ea;}
+  .chart-sub{font-size:11px;color:#2a3d57;margin-top:2px;}
+  .legend{display:flex;gap:14px;font-size:11px;color:#3a5070;}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .leg-line{width:18px;height:2px;border-radius:2px;display:inline-block;}
+  canvas{max-height:280px;}
+
+  /* BOTTOM */
+  .bottom{display:flex;gap:16px;flex-wrap:wrap;}
+  .panel{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:20px;min-width:0;}
+  .panel-title{font-size:13px;font-weight:600;color:#c8d8ea;margin-bottom:14px;}
+  .info-panel{flex:2 1 280px;}
+  .bar-panel{flex:1 1 260px;}
+
+  /* Info links */
+  .info-links{list-style:none;padding:0;}
+  .info-links li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+  .info-links li:last-child{border-bottom:none;}
+  .info-links a{color:#00b4d8;text-decoration:none;font-size:13px;font-weight:500;}
+  .info-links a:hover{text-decoration:underline;}
+  .info-links .link-desc{font-size:11px;color:#3a5070;margin-top:3px;}
+  .info-note{background:rgba(0,180,216,.07);border-left:3px solid #00b4d8;border-radius:0 8px 8px 0;padding:12px 14px;font-size:12px;color:#6b8aa8;line-height:1.6;margin-bottom:14px;}
+
+  /* LEGEND */
+  .scale-bar{margin-top:18px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:12px 18px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;}
+  .scale-item{display:flex;align-items:center;gap:6px;font-size:11px;}
+  .scale-dot{width:9px;height:9px;border-radius:2px;}
+  .scale-range{color:#2a3a52;}
+  .footer-note{text-align:center;font-size:10px;color:#1e2d42;margin-top:14px;}
+
+  @media(max-width:600px){
+    .wrap{padding:16px;}
+    .header{padding:18px 16px;}
+    .stats .stat{flex:1 1 100px;padding:12px 14px;}
+    .stat-val{font-size:20px;}
+    .info-panel{flex-basis:100%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="title-tag">&#x25C8; гідрологічний моніторинг</div>
+    <h1>Річка Десна</h1>
+    <div class="subtitle">Чернігівська область · GloFAS / Open-Meteo · оновлюється щодня</div>
+  </div>
+  <div id="levelBadge" class="level-badge" style="display:none">
+    <div class="lbl">рівень небезпеки</div>
+    <div class="val" id="levelVal">&mdash;</div>
+    <div id="levelQ" style="font-size:11px;font-family:'Space Mono',monospace;opacity:.7;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="controls">
+    <div class="btn-group" id="stationBtns"></div>
+    <div class="btn-group" style="margin-left:auto;">
+      <button class="range-btn active" data-days="7"  onclick="setRange(7)">7 днів</button>
+      <button class="range-btn"        data-days="30" onclick="setRange(30)">30 днів</button>
+      <button class="range-btn"        data-days="90" onclick="setRange(90)">90 днів</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Зараз</div><div class="stat-val" id="sCur">&mdash;<span>м³/с</span></div><div class="stat-sub" id="sTrend"></div></div>
+    <div class="stat"><div class="stat-label">Максимум</div><div class="stat-val" id="sMax">&mdash;<span>м³/с</span></div><div class="stat-sub" id="sMaxSub"></div></div>
+    <div class="stat"><div class="stat-label">Мінімум</div><div class="stat-val" id="sMin">&mdash;<span>м³/с</span></div><div class="stat-sub" id="sMinSub"></div></div>
+    <div class="stat"><div class="stat-label">Середнє</div><div class="stat-val" id="sAvg">&mdash;<span>м³/с</span></div><div class="stat-sub" id="sAvgSub"></div></div>
+    <div class="stat"><div class="stat-label">Прогноз +14</div><div class="stat-val" id="sFore">&mdash;<span>м³/с</span></div><div class="stat-sub">+14 днів</div></div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title" id="chartTitle">Новгород-Сівер. — Витрата води (м³/с)</div>
+        <div class="chart-sub" id="chartSub">Завантаження...</div>
+      </div>
+      <div class="legend">
+        <span><span class="leg-line" style="background:#00b4d8"></span>факт</span>
+        <span><span class="leg-line" style="border-top:2px dashed #ffd60a;background:none;height:0"></span>прогноз</span>
+      </div>
+    </div>
+    <canvas id="mainChart"></canvas>
+  </div>
+
+  <div class="bottom">
+    <div class="panel bar-panel">
+      <div class="panel-title">Пости вздовж Десни</div>
+      <canvas id="barChart" style="max-height:180px"></canvas>
+      <div style="font-size:10px;color:#2a3a52;text-align:center;margin-top:8px;">поточна витрата (м³/с)</div>
+    </div>
+    <div class="panel info-panel">
+      <div class="panel-title">&#x25C8; Офіційні джерела</div>
+      <div class="info-note">
+        <strong>Витрата води (м³/с)</strong> — об'єм води, що проходить через переріз річки за секунду.
+        Це модельовані дані GloFAS (Copernicus), а не прямі показання гідропостів.
+      </div>
+      <ul class="info-links">
+        <li>
+          <a href="https://meteo.gov.ua" target="_blank" rel="noopener">meteo.gov.ua</a>
+          <div class="link-desc">Укргідрометцентр — офіційні гідрологічні бюлетені</div>
+        </li>
+        <li>
+          <a href="https://allrivers.info" target="_blank" rel="noopener">allrivers.info</a>
+          <div class="link-desc">Рівні річок України в реальному часі (дані гідропостів)</div>
+        </li>
+        <li>
+          <a href="https://www.cgms.gov.ua" target="_blank" rel="noopener">cgms.gov.ua</a>
+          <div class="link-desc">Чернігівський гідрометцентр</div>
+        </li>
+        <li>
+          <a href="https://flood-api.open-meteo.com" target="_blank" rel="noopener">flood-api.open-meteo.com</a>
+          <div class="link-desc">GloFAS / Open-Meteo Flood API — джерело даних цього дашборду</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="scale-bar">
+    <div style="font-size:10px;color:#2a3a52;letter-spacing:1.5px;text-transform:uppercase;">Шкала:</div>
+    <div class="scale-item"><div class="scale-dot" style="background:#00b4d8"></div><span class="scale-name" style="color:#00b4d8">НИЗЬКИЙ</span><span class="scale-range">&lt; 500</span></div>
+    <div class="scale-item"><div class="scale-dot" style="background:#00c896"></div><span class="scale-name" style="color:#00c896">НОРМАЛЬНИЙ</span><span class="scale-range">500–900</span></div>
+    <div class="scale-item"><div class="scale-dot" style="background:#ffd60a"></div><span class="scale-name" style="color:#ffd60a">ПІДВИЩЕНИЙ</span><span class="scale-range">900–1400</span></div>
+    <div class="scale-item"><div class="scale-dot" style="background:#ff7800"></div><span class="scale-name" style="color:#ff7800">НЕБЕЗПЕЧНИЙ</span><span class="scale-range">1400–2000</span></div>
+    <div class="scale-item"><div class="scale-dot" style="background:#ff2d55"></div><span class="scale-name" style="color:#ff2d55">КРИТИЧНИЙ</span><span class="scale-range">&gt; 2000 м³/с</span></div>
+  </div>
+
+  <div class="footer-note">
+    Дані: GloFAS / Copernicus Emergency Management Service / Open-Meteo · Безкоштовний сервіс моніторингу
+  </div>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script>
+// Wait for Chart.js to load (scripts are deferred)
+window.addEventListener("DOMContentLoaded", init);
+
+function init() {
+  // If Chart.js hasn't loaded yet (unlikely with DOMContentLoaded + defer, but safe)
+  if (typeof Chart === "undefined") {
+    window.addEventListener("load", init);
+    return;
+  }
+
+const STATIONS = [
+  { id:"novhorod_siv", label:"Новгород-Сівер.",      lat:52.00,   lon:33.25  },
+  { id:"chernihiv",    label:"Чернігів",              lat:51.49,   lon:31.28  },
+  { id:"oster",        label:"Остер (нижня)",         lat:51.30,   lon:31.00  },
+];
+
+const THRESHOLDS = [500, 900, 1400, 2000];
+const COLORS = ["#00b4d8","#00c896","#ffd60a","#ff7800","#ff2d55"];
+const LABELS = ["НИЗЬКИЙ","НОРМАЛЬНИЙ","ПІДВИЩЕНИЙ","НЕБЕЗПЕЧНИЙ","КРИТИЧНИЙ"];
+
+let currentStation = 0;
+let currentDays = 7;
+let mainChart = null;
+let barChart = null;
+let allData = {};
+
+function floodIdx(q) {
+  if (q >= 2000) return 4;
+  if (q >= 1400) return 3;
+  if (q >= 900)  return 2;
+  if (q >= 500)  return 1;
+  return 0;
+}
+
+function fmt(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("uk-UA", {day:"numeric", month:"short"});
+}
+
+// init station buttons
+const stBtns = document.getElementById("stationBtns");
+STATIONS.forEach((s,i) => {
+  const b = document.createElement("button");
+  b.textContent = s.label;
+  b.onclick = () => switchStation(i);
+  b.id = "stBtn_" + i;
+  if (i === 0) b.classList.add("active");
+  stBtns.appendChild(b);
+});
+
+// expose to global for inline onclick handlers
+window.switchStation = switchStation;
+window.setRange = setRange;
+
+function switchStation(i) {
+  currentStation = i;
+  document.querySelectorAll("#stationBtns button").forEach((b,j) => b.classList.toggle("active", j===i));
+  document.getElementById("chartTitle").textContent = STATIONS[i].label + " — Витрата води (м³/с)";
+  loadChart();
+}
+
+function setRange(days) {
+  currentDays = days;
+  document.querySelectorAll(".range-btn").forEach(b => b.classList.toggle("active", parseInt(b.dataset.days)===days));
+  loadChart();
+}
+
+// fetch from GloFAS
+async function fetchStation(lat, lon, pastDays, forecastDays) {
+  const url = `https://flood-api.open-meteo.com/v1/flood?latitude=${lat}&longitude=${lon}&daily=river_discharge&past_days=${pastDays}&forecast_days=${forecastDays}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+async function loadChart() {
+  const s = STATIONS[currentStation];
+  document.getElementById("chartSub").textContent = "Завантаження...";
+
+  try {
+    const json = await fetchStation(s.lat, s.lon, currentDays, 14);
+    const times = json.daily.time;
+    const qvals = json.daily.river_discharge;
+    const todayStr = new Date().toISOString().slice(0,10);
+
+    const hist = [], fore = [];
+    times.forEach((t,i) => {
+      if (qvals[i] === null) return;
+      const pt = { x: fmt(t), y: Math.round(qvals[i]) };
+      if (t <= todayStr) hist.push(pt); else fore.push(pt);
+    });
+
+    // stitch forecast (last hist point + forecast)
+    const foreStitched = hist.length ? [hist.at(-1), ...fore] : fore;
+
+    updateStats(hist, fore, currentDays);
+    drawMainChart(hist, foreStitched);
+
+    // Update badge only if we have historical data
+    if (hist.length > 0) {
+      const lastQ = hist.at(-1).y;
+      const idx = floodIdx(lastQ);
+      const badge = document.getElementById("levelBadge");
+      badge.style.display = "block";
+      badge.style.background = COLORS[idx] + "22";
+      badge.style.border = "1px solid " + COLORS[idx] + "44";
+      document.getElementById("levelVal").textContent = LABELS[idx];
+      document.getElementById("levelVal").style.color = COLORS[idx];
+      document.getElementById("levelQ").textContent = lastQ + " м³/с";
+      document.getElementById("levelQ").style.color = COLORS[idx];
+
+      allData[s.id] = lastQ;
+    }
+
+    document.getElementById("chartSub").textContent =
+      "Джерело: GloFAS / Copernicus · оновлено " + new Date().toLocaleTimeString("uk-UA",{hour:"2-digit",minute:"2-digit"});
+
+    loadBarChart();
+
+  } catch(e) {
+    document.getElementById("chartSub").textContent = "Помилка: " + e.message;
+  }
+}
+
+function updateStats(hist, fore, days) {
+  const qs = hist.map(d=>d.y);
+  const cur = qs.at(-1) ?? null;
+  const max = qs.length ? Math.max(...qs) : null;
+  const min = qs.length ? Math.min(...qs) : null;
+  const avg = qs.length ? Math.round(qs.reduce((a,b)=>a+b,0)/qs.length) : null;
+  const foreLast = fore.at(-1)?.y ?? null;
+
+  const idx = cur !== null ? floodIdx(cur) : 0;
+  const trend = qs.length >= 4
+    ? (qs.at(-1) > qs.at(-4) ? "▲ зростає" : qs.at(-1) < qs.at(-4) ? "▼ спадає" : "— стабільний")
+    : "—";
+
+  setStatEl("sCur", cur, COLORS[idx]);
+  setStatEl("sMax", max, "#ffd60a");
+  setStatEl("sMin", min, "#90e0ef");
+  setStatEl("sAvg", avg, "#8899b8");
+  setStatEl("sFore", foreLast, "#ffd60a");
+  document.getElementById("sTrend").textContent = trend;
+  document.getElementById("sMaxSub").textContent = "за " + days + " днів";
+  document.getElementById("sMinSub").textContent = "за " + days + " днів";
+  document.getElementById("sAvgSub").textContent = "за " + days + " днів";
+}
+
+function setStatEl(id, val, color) {
+  const el = document.getElementById(id);
+  el.style.color = color || "#e2e8f0";
+  el.innerHTML = (val ?? "—") + '<span>м³/с</span>';
+}
+
+function makeGradient(chart, r, g, b, alpha) {
+  const area = chart.chartArea;
+  if (!area) return `rgba(${r},${g},${b},${alpha})`;
+  const gradient = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+  gradient.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  gradient.addColorStop(1, `rgba(${r},${g},${b},0.02)`);
+  return gradient;
+}
+
+function drawMainChart(hist, foreStitched) {
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+  const ctx = document.getElementById("mainChart").getContext("2d");
+
+  const thresholdLines = {};
+  THRESHOLDS.forEach((v,i) => {
+    thresholdLines["threshold_" + i] = {
+      type: "line",
+      yMin: v, yMax: v,
+      borderColor: COLORS[i+1] + "55",
+      borderWidth: 1,
+      borderDash: [4,4],
+      label: { display: true, content: ["норма","підвищ.","небезп.","критич."][i], position:"end",
+        color: COLORS[i+1], font:{ size:9 }, backgroundColor:"transparent", padding:2 }
+    };
+  });
+
+  mainChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      datasets: [
+        {
+          label: "Факт",
+          data: hist,
+          borderColor: "#00b4d8",
+          borderWidth: 2,
+          backgroundColor: (context) => makeGradient(context.chart, 0, 180, 216, 0.35),
+          fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5,
+        },
+        {
+          label: "Прогноз",
+          data: foreStitched,
+          borderColor: "#ffd60a",
+          borderWidth: 2,
+          borderDash: [7,4],
+          backgroundColor: (context) => makeGradient(context.chart, 255, 214, 10, 0.25),
+          fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode:"index", intersect:false },
+      plugins: {
+        legend: { display:false },
+        annotation: { annotations: thresholdLines },
+        tooltip: {
+          backgroundColor:"#0d1a2e", borderColor:"rgba(0,180,216,.4)", borderWidth:1,
+          titleColor:"#6b7fa3", bodyColor:"#e2e8f0",
+          callbacks: {
+            label: ctx => ` ${ctx.raw.y} м³/с`,
+          }
+        }
+      },
+      scales: {
+        x: { type:"category", grid:{ color:"rgba(255,255,255,.04)" }, ticks:{ color:"#3a5070", font:{size:11} } },
+        y: { grid:{ color:"rgba(255,255,255,.04)" }, ticks:{ color:"#3a5070", font:{size:11} },
+          title:{ display:true, text:"м³/с", color:"#3a5070", font:{size:10} } }
+      }
+    }
+  });
+}
+
+async function loadBarChart() {
+  const promises = STATIONS.filter(s => !allData[s.id]).map(async s => {
+    try {
+      const json = await fetchStation(s.lat, s.lon, 1, 0);
+      const q = json.daily.river_discharge.filter(v=>v!==null).at(-1);
+      if (q !== null && q !== undefined) allData[s.id] = Math.round(q);
+    } catch(e) {
+      console.warn("Не вдалось завантажити " + s.label + ": " + e.message);
+    }
+  });
+  await Promise.all(promises);
+
+  if (barChart) { barChart.destroy(); barChart = null; }
+  const ctx = document.getElementById("barChart").getContext("2d");
+  const vals = STATIONS.map(s => allData[s.id] ?? null);
+  const colors = vals.map(v => v !== null ? COLORS[floodIdx(v)] + "cc" : "rgba(255,255,255,.1)");
+
+  barChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: STATIONS.map(s => s.label),
+      datasets: [{ data: vals, backgroundColor: colors, borderRadius: 5 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:"#0d1a2e", borderColor:"rgba(0,180,216,.4)", borderWidth:1,
+          callbacks: { label: ctx => ctx.raw !== null ? ` ${ctx.raw} м³/с` : " немає даних" }
+        }
+      },
+      scales: {
+        x: { grid:{ display:false }, ticks:{ color:"#3a5070", font:{size:10} } },
+        y: { grid:{ color:"rgba(255,255,255,.04)" }, ticks:{ color:"#3a5070", font:{size:10} } }
+      }
+    }
+  });
+}
+
+// INIT — only loadChart, which calls loadBarChart internally
+loadChart();
+
+} // end init()
+</script>
+</body>
+</html>
